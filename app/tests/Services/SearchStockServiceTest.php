@@ -3,6 +3,7 @@
 namespace App\Tests\Services;
 
 use App\Exceptions\InvalidDateRangeException;
+use App\Exceptions\InvalidSymbolException;
 use App\Repository\CompanySymbolRepository;
 use App\Services\HistoricalDataApi;
 use App\Services\SearchStockService;
@@ -156,6 +157,37 @@ class SearchStockServiceTest extends TestCase
         $service->fetchData('GOOG',$date_min_param,$date_max_param);
     }
 
+    public function testEmptySymbol()
+    {
+        $symbolRepositoryMock = $this->getMockBuilder(CompanySymbolRepository::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['findOneBy'])
+            ->getMock();
+
+        // We need to know for non-empty values
+        $symbolRepositoryMock->method('findOneBy')->willReturn(['symbol'=>'GOOG']);
+
+        $historicalDataApiMock = $this->createMock(HistoricalDataApi::class);
+        $historicalDataApiMock->method('fetch')->willReturn(
+            json_decode(
+                file_get_contents(self::JSON_RESPONSE_MINI),
+                true
+            )
+        );
+        $historicalDataApiMock->method('fetch')->willReturn(json_decode(file_get_contents(self::JSON_RESPONSE_MINI),true));
+
+        $this->getSearchResultSubset($date_min,$date_max);
+
+        $date_min_param = (new \DateTime())->setTimestamp($date_min);
+        $date_max_param = (new \DateTime())->setTimestamp($date_max);
+
+        $service = new SearchStockService($historicalDataApiMock,$symbolRepositoryMock);
+
+        // Upon empty Symbol some exception will be thrown
+        $this->expectException(InvalidSymbolException::class);
+        $service->fetchData('',$date_min_param,$date_max_param);
+    }
+
     public function testWrongProvidedRange()
     {
         $symbolRepositoryMock = $this->getMockBuilder(CompanySymbolRepository::class)
@@ -183,7 +215,6 @@ class SearchStockServiceTest extends TestCase
         $service = new SearchStockService($historicalDataApiMock,$symbolRepositoryMock);
 
         $this->expectException(InvalidDateRangeException::class);
-        $result = $service->fetchData('GOOG',$date_max_param,$date_min_param);
-
+        $service->fetchData('GOOG',$date_max_param,$date_min_param);
     }
 }

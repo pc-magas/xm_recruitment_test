@@ -44,6 +44,10 @@ class SearchStockService
 
         $symbol=strtoupper(trim($symbol));
 
+        if(empty($symbol)){
+            throw new InvalidSymbolException();
+        }
+
         if(empty($this->symbolRepository->findOneBy(['symbol'=>$symbol]))){
             throw new \RuntimeException("Symbol is not found");
         }
@@ -52,11 +56,7 @@ class SearchStockService
             throw new InvalidDateRangeException();
         }
 
-        try {
-            $result = $this->historicalDataApi->fetch($symbol);
-        } catch (\Exception $e){
-            throw $e;
-        }
+        $result = $this->historicalDataApi->fetch($symbol);
 
         if(empty($result['prices'])){
             return [];
