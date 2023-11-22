@@ -1,1 +1,15 @@
 .idea
+.vscode
+
+logs/*
+!logs/.gitkeep
+
+volumes
+!volumes/.gitkeep
+
+
+ssl/ca/*
+!ssl/ca/.gitkeep
+
+ssl/certs/*
+!ssl/certs/.gitkeep

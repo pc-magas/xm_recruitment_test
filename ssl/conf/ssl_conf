@@ -1,0 +1,14 @@
+# File use to configure signing request settings
+
+[ req ]
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+prompt=no
+
+# Set your own Org settings here
+[ req_distinguished_name ]
+countryName         = GR
+stateOrProvinceName = Attica
+localityName        = Acharnes
+organizationName    = PC_MAGAS
+commonName          = example.local

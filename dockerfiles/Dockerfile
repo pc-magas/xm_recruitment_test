@@ -1,4 +1,4 @@
-# Dockerfile from
+
 ARG COMPOSER_VERSION=latest\
     PHP_VERSION=8.1 \
     NODE_VERSION=latest
@@ -31,17 +31,17 @@ RUN install-php-extensions\
      bcmath\
      ctype\
      curl\
-     dom\
-     fileinfo\
-     filter\
-     gd\
-     hash\
-     iconv\
-     intl\
-     json\
-     libxml\
-     openssl\
-     mbstring\
+     dom\ 
+     fileinfo\ 
+     filter\ 
+     gd\ 
+     hash\ 
+     iconv\ 
+     intl\ 
+     json\ 
+     libxml\ 
+     openssl\ 
+     mbstring\ 
      pcre\
      pdo pdo_mysql\
      simplexml\

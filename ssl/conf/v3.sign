@@ -1,0 +1,18 @@
+# File is used to configure the domains that generated certificate is for.
+
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names 
+
+[alt_names]
+# Local hosts
+# COnfigure Any ips that need ssl here
+# Note: Any ip indicating record MUST start with IP.^num^=
+IP.2 = 127.0.0.1
+IP.3 = ::1 
+IP.4 = 172.161.0.2
+
+# List your domain names here
+# Configure any DOMAINS that need ssl here
+DNS.1 = localhost

@@ -1,0 +1,65 @@
+version: "3.3"
+services:
+
+  # PHP APPS
+  php_app:
+    container_name: php_app
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile
+      args:
+        - COMPOSER_VERSION=latest
+        - XDEBUG_VERSION=latest
+    volumes:
+      - "php_app:/var/www/html"
+      - "./logs/xdebug:/var/log/xdebug"
+      - "./ssl/ca/ca.crt:/usr/local/share/cert_install/ca.crt"
+    networks:
+      private:
+    env_file: env/php.env
+
+  # Supportive services
+  
+  nginx:
+    image: nginx
+    networks:
+      private:
+      public:
+        ipv4_address: ${IP_BASE}.2
+    volumes:
+      - "php_app:/var/www/html"
+      - "./conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro"
+      - "./ssl/certs/www.crt:/etc/nginx/ssl/www.crt:ro"
+      - "./ssl/certs/www.key:/etc/nginx/ssl/www.key:ro"
+
+  mariadb:
+    # Replace with your own
+    image: mariadb:10.4
+    command:
+      --max_allowed_packet=64M
+      --optimizer_use_condition_selectivity=1
+      --optimizer_switch="rowid_filter=off"
+    networks:
+      private:
+      public:
+        ipv4_address: ${IP_BASE}.3
+    env_file: env/db.env
+    volumes:
+      - ./volumes/db:/var/lib/mysql
+
+volumes:
+
+  php_app:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./app
+  
+networks:
+  private:
+  public:
+    ipam:
+      config:
+        - subnet: ${IP_BASE}.0/24
+          gateway: ${IP_BASE}.1 
