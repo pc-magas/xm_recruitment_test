@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use PHPUnit\TextUI\Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -38,29 +39,39 @@ class PopulateSymbolsIntoDBCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-
         // We just need to download and read Json contents GuzzleHttp is a hassle for something simple.
         $data = file_get_contents(self::URL);
         $data = json_decode($data,true);
 
         $i=0;
-        foreach($data as $item){
+        try{
 
-            $symbol = new CompanySymbol();
-            $symbol->setName($item['Company Name']);
-            $symbol->setSymbol($item['Symbol']);
-            $io->info("Reading item ${i}: ${item['Company Name']} ( ${item['Symbol']} )");
-            $this->entityManager->persist($symbol);
-            if(($i%self::BATCH_SIZE)==0){
-                $io->note("Flusing Data");
-                $this->entityManager->flush();
-                $this->entityManager->clear();
+            foreach($data as $item){
+
+                $symbol = $this->entityManager->getRepository(CompanySymbol::class)->findOneBy(['symbol' => $item['Symbol']]);
+                if($symbol){
+                    $io->warning("${item['Company Name']} (${item['Symbol']}) Already exists Skipping");
+                    continue;
+                }
+
+                $symbol = new CompanySymbol();
+                $symbol->setName($item['Company Name']);
+                $symbol->setSymbol($item['Symbol']);
+                $io->info("Reading item ${i}: ${item['Company Name']} ( ${item['Symbol']} )");
+                $this->entityManager->persist($symbol);
+                if(($i%self::BATCH_SIZE)==0){
+                    $io->note("Flusing Data");
+                    $this->entityManager->flush();
+                    $this->entityManager->clear();
+                }
+                ++$i;
             }
-            ++$i;
+        }catch (Exception $e){
+            throw $e;
+        } finally {
+            $this->entityManager->flush();
+            $this->entityManager->clear();
         }
-
-        $this->entityManager->flush();
-        $this->entityManager->clear();
 
         return Command::SUCCESS;
     }
