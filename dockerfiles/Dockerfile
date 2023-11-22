@@ -1,4 +1,4 @@
-
+# Dockerfile from
 ARG COMPOSER_VERSION=latest\
     PHP_VERSION=8.1 \
     NODE_VERSION=latest
@@ -31,17 +31,17 @@ RUN install-php-extensions\
      bcmath\
      ctype\
      curl\
-     dom\ 
-     fileinfo\ 
-     filter\ 
-     gd\ 
-     hash\ 
-     iconv\ 
-     intl\ 
-     json\ 
-     libxml\ 
-     openssl\ 
-     mbstring\ 
+     dom\
+     fileinfo\
+     filter\
+     gd\
+     hash\
+     iconv\
+     intl\
+     json\
+     libxml\
+     openssl\
+     mbstring\
      pcre\
      pdo pdo_mysql\
      simplexml\
@@ -57,10 +57,9 @@ RUN install-php-extensions\
 
 
 # Install composer & git
-COPY --from=composer /usr/bin/composer /opt/composer
+COPY --from=composer /usr/bin/composer /bin/composer
 RUN install-php-extensions zip &&\
-    chown root:root /opt/composer &&\
-    echo "#!/usr/bin/env sh\nphp -dxdebug.mode=off /opt/composer" > /bin/composer &&\
+    chown root:root /bin/composer &&\
     chmod +x /bin/composer &&\
     DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git &&\
     mkdir -p /var/www/.composer &&\
@@ -76,9 +75,9 @@ ENV XDEBUG_CONF_FILE=${PHP_CONF_DIR}/docker-php-ext-xdebug.ini
 
 ARG XDEBUG_VERSION="latest"
 
-COPY ./utils/test_xdebug.php /bin/test_xdebug
-COPY ./utils/get_xdebug_ip.php /bin/get_xdebug_ip
-COPY ./utils/setup_xdebug.php /tmp/setup_xdebug
+COPY ../utils/test_xdebug.php /bin/test_xdebug
+COPY ../utils/get_xdebug_ip.php /bin/get_xdebug_ip
+COPY ../utils/setup_xdebug.php /tmp/setup_xdebug
 
 RUN echo ${XDEBUG_VERSION} &&\
     php /tmp/setup_xdebug &&\
@@ -91,6 +90,8 @@ RUN echo ${XDEBUG_VERSION} &&\
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* cache/* /var/lib/log/*
 
 VOLUME /var/log/xdebug
+
+
 
 # ***************************************************#
 # Uncomment for nodejs (for example frontend builds) #
@@ -108,7 +109,7 @@ VOLUME /var/log/xdebug
 # Do not edit bellow this line
 #***********************************************#
 
-COPY ./utils/entrypoint.sh  /usr/local/bin/entrypoint.sh
+COPY ../utils/entrypoint.sh  /usr/local/bin/entrypoint.sh
 
 RUN chown root:root /usr/local/bin/entrypoint.sh &&\
     chmod +x /usr/local/bin/entrypoint.sh &&\
