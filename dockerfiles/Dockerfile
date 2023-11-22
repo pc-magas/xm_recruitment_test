@@ -24,6 +24,7 @@ RUN usermod --shell /bin/bash www-data &&\
     curl -sSLf \
         -o /usr/local/bin/install-php-extensions \
         https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions &&\
+
     chmod +x /usr/local/bin/install-php-extensions
 
 # INSTALL PHP MODULES HERE
@@ -61,7 +62,7 @@ COPY --from=composer /usr/bin/composer /bin/composer
 RUN install-php-extensions zip &&\
     chown root:root /bin/composer &&\
     chmod +x /bin/composer &&\
-    DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git &&\
+    DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git netcat-traditional &&\
     mkdir -p /var/www/.composer &&\
     chown www-data:www-data /var/www/.composer &&\
     chmod 666 /var/www/.composer &&\
