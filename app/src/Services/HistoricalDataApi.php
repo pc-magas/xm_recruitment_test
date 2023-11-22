@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
+use App\Exceptions\InvalidSymbolException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * Fetches Historical Data from The API.
- * It is set as an Adapter (using GoF Adapter pattern) over GuzzleHttp for specific API.
+ * It is set as an Adapter (using GoF Adapter pattern) over the Http client for specific API.
  */
 class HistoricalDataApi
 {
@@ -28,14 +29,15 @@ class HistoricalDataApi
     /**
      * Retrieve Historical Data for a company
      * @param string $symbol Company Symbol that is used to fetch the historical data
-     * @return array With the result
-     * @throws RequestException
+     * @return array With the result from the api
+     * @throws TransportExceptionInterface In case of failed http request
+     * @throws InvalidSymbolException In case of empty string at symbol param
      */
     public function fetch(string $symbol):array
     {
         $symbol=strtoupper(trim($symbol));
         if(empty($symbol)){
-            throw new \InvalidArgumentException("Symbol must have value");
+            throw new InvalidSymbolException();
         }
 
         $response = $this->client->request(
