@@ -57,7 +57,7 @@ class SearchFormController extends AbstractController
 
         // Mocked Data we will use the SearchStockService
         return new JsonResponse([
-            'name'=>$symbol,'price'=>$results
+            'name'=>$results->getSymbol()->getName(),'price'=>$results->getPrices()
         ]);
     }
 }
