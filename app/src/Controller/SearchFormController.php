@@ -34,9 +34,9 @@ class SearchFormController extends AbstractController
         }
 
         // StockService Also validates Data
-        $symbol = $this->get('symbol')??'';
-        $unix_from = $this->get('unix_from');
-        $unix_until= $this->get('unix_until');
+        $symbol = $request->get('symbol')??'';
+        $unix_from = $request->get('from_unix');
+        $unix_until= $request->get('until_unix');
 
         if(empty($unix_until) && empty($unix_from)){
             return new JsonResponse(['err'=>"Invalid Range"],Response::HTTP_BAD_REQUEST);
@@ -50,7 +50,7 @@ class SearchFormController extends AbstractController
         } catch (\InvalidArgumentException $e) {
             return new JsonResponse(['err'=>$e->getMessage()],Response::HTTP_BAD_REQUEST);
         } catch (\RuntimeException $r){
-            return new JsonResponse(['err'=>$e->getMessage()],Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['err'=>$r->getMessage()],Response::HTTP_NOT_FOUND);
         } catch (\Exception $e){
             return new JsonResponse(['err'=>"Unexpected Error"],Response::HTTP_INTERNAL_SERVER_ERROR);
         }
