@@ -8,6 +8,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 
 class SearchFormController extends AbstractController
@@ -19,7 +21,10 @@ class SearchFormController extends AbstractController
     }
 
     #[Route('/search',name:'search',methods: ['POST'])]
-    public function searchAjax(Request $request,SearchStockService $stockSearcher):JsonResponse
+    public function searchAjax(Request $request,
+                               SearchStockService $stockSearcher,
+                               MailerInterface $mailer
+    ):JsonResponse
     {
         $submittedToken = $request->get('token');
         if (!$this->isCsrfTokenValid('searchform', $submittedToken)) {
@@ -42,11 +47,10 @@ class SearchFormController extends AbstractController
             return new JsonResponse(['err'=>"Invalid Range"],Response::HTTP_BAD_REQUEST);
         }
 
+        $datetimeFrom = (new \DateTime())->setTimestamp($unix_from);
+        $datetimeUntil = (new \DateTime())->setTimestamp($unix_until);
         try{
-            $results = $stockSearcher->fetchData($symbol,
-                (new \DateTime())->setTimestamp($unix_from),
-                (new \DateTime())->setTimestamp($unix_until),
-            );
+            $results = $stockSearcher->fetchData($symbol, $datetimeFrom,$datetimeUntil);
         } catch (\InvalidArgumentException $e) {
             return new JsonResponse(['err'=>$e->getMessage()],Response::HTTP_BAD_REQUEST);
         } catch (\RuntimeException $r){
@@ -54,6 +58,14 @@ class SearchFormController extends AbstractController
         } catch (\Exception $e){
             return new JsonResponse(['err'=>"Unexpected Error"],Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+
+        // The email sending is not defined upon SearchStockService in order to have the SearchStockService scoped on search only.
+        $email = (new Email())
+            ->from('stocks@example.com')
+            ->to($email)
+            ->subject($results->getSymbol()->getName())
+            ->text("From ".$datetimeFrom->format("YYYY-mm-dd")."to".$datetimeUntil->format("YYYY-mm-dd"));
+        $mailer->send($email);
 
         // Mocked Data we will use the SearchStockService
         return new JsonResponse([

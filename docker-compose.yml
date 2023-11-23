@@ -46,6 +46,15 @@ services:
     env_file: env/db.env
     volumes:
       - ./volumes/db:/var/lib/mysql
+  
+  mailhog:
+    image: mailhog/mailhog
+    logging:
+      driver: 'none' 
+    networks:
+      private:
+      public:
+        ipv4_address: ${IP_BASE}.6
 
 volumes:
 
