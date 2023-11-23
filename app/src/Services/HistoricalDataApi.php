@@ -16,14 +16,18 @@ class HistoricalDataApi
     private $api_key;
 
     private HttpClientInterface $client;
-    public function __construct(HttpClientInterface $http, String $api_key)
+    public function __construct(HttpClientInterface $http)
     {
-        $api_key=trim($api_key);
-        if(empty($api_key)){
-            throw new \InvalidArgumentException("Api key is not a valid String");
-        }
-        $this->api_key=$api_key;
         $this->client=$http;
+        $this->api_key='';
+    }
+
+    public function setApiKey(string $apiKey): static
+    {
+        $api_key=trim($apiKey);
+        $this->api_key=$apiKey;
+
+        return $this;
     }
 
     /**
@@ -35,6 +39,10 @@ class HistoricalDataApi
      */
     public function fetch(string $symbol):array
     {
+        if(empty($this->api_key)){
+            throw new \RuntimeException("Api key is not a valid String");
+        }
+
         $symbol=strtoupper(trim($symbol));
         if(empty($symbol)){
             throw new InvalidSymbolException();

@@ -27,7 +27,9 @@ class HistoricalDataApiTest extends TestCase
     {
         $httpClientMock = $this->getMockedHttpClientWithSucessfullResponse($expectedResponse);
 
-        $api = new HistoricalDataApi($httpClientMock,'lalalala');
+        $api = new HistoricalDataApi($httpClientMock);
+        $api->setApiKey('lalalala');
+
         $response=$api->fetch('GOOG');
         $this->assertIsArray($response);
         $this->assertEquals($expectedResponse,$response);
@@ -37,15 +39,29 @@ class HistoricalDataApiTest extends TestCase
     {
         $httpClientMock = $this->getMockedHttpClientWithSucessfullResponse();
 
-        $this->expectException(\InvalidArgumentException::class);
-        $api = new HistoricalDataApi($httpClientMock,'');
+        $api = new HistoricalDataApi($httpClientMock);
+        $api->setApiKey("");
+
+        $this->expectException(\RuntimeException::class);
+        $api->fetch("GOOG");
+    }
+
+    public function testEmptyNoApiKeySet()
+    {
+        $httpClientMock = $this->getMockedHttpClientWithSucessfullResponse();
+
+        $api = new HistoricalDataApi($httpClientMock);
+
+        $this->expectException(\RuntimeException::class);
+        $api->fetch("GOOG");
     }
 
     public function testEmptySymbol()
     {
         $httpClientMock = $this->getMockedHttpClientWithSucessfullResponse($expectedResponse);
 
-        $api = new HistoricalDataApi($httpClientMock,'lalalala');
+        $api = new HistoricalDataApi($httpClientMock);
+        $api->setApiKey("lalalala");
         $this->expectException(\Exception::class);
         $response=$api->fetch('');
     }

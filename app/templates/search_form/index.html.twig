@@ -1,0 +1,152 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Stock History{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <style>
+        aside {
+            position: absolute;
+            float:left;
+            width:20%;
+            top: 0px;
+            bottom: 0px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+
+
+<aside class="bg-light">
+    <!-- Form is not reused therefore seems like a wast to use form builder -->
+   <form id="searchform"  class="container m-1" action="{{ path('search') }}" method="POST">
+        <fieldset >
+           <legend>Stock History Search form</legend>
+           <div class="mb-3">
+               <label  class="form-label">Company Symbol*</label>
+               <input name="symbol" class="form-control" type="text" required/>
+           </div>
+            <input type="hidden" name="token" value="{{ csrf_token('searchform') }}">
+           <div class="mb-3 row">
+               <div class="col">
+                    <label>Date Range*</label>
+                    <input id="date_range" name="date_range" class="form-control date" type="text" required>
+               </div>
+           </div>
+            <input type="hidden" name="from_unix"/>
+            <input type="hidden" name="until_unix"/>
+           <div class="mb-3">
+                <label class="form-label">Email for notification*</label>
+                <input name="email" class="form-control" type="email" required>
+           </div>
+            <button id="submitbtn" class="btn btn-primary btn-block" disabled type="submit">Submit</button>
+        </fieldset>
+   </form>
+</aside>
+
+<main style="float: right" class="col">
+
+</main>
+{% endblock %}
+
+{% block javascripts %}
+    <script
+            src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+
+    <script>
+
+        function inputError(element,error_msg){
+            const parent = $(element).parent();
+            const errorDiv = document.createElement("div")
+            errorDiv.innerText=error_msg;
+            errorDiv.className="invalid-feedback"
+            parent.append(errorDiv);
+        }
+
+        function validateForm() {
+            let check = true
+            $("#searchform .invalid-feedback").remove();
+
+            $("#searchform input").each((index,element)=>{
+                const input = $(element);
+                const value = input.val().trim();
+                input.removeClass('is-invalid');
+
+                if(input.prop('required') && value==''){
+                    check &&=false;
+                    inputError(element,'This field is required');
+                    input.addClass('is-invalid');
+                    return;
+                }
+
+                if(input.attr('type') !='text' && !element.checkValidity()){
+                    check &&=false;
+                    inputError(element,'This field does not contain valid '+input.attr('type'));
+                    input.addClass('is-invalid');
+                    return;
+                }
+            });
+
+
+            const from_unix = parseInt($('input[name=from_unix]').val());
+            const until_unix = parseInt($('input[name=until_unix]').val());
+            console.log(from_unix,until_unix);
+            if(from_unix > until_unix){
+                inputError($("#date_range"),'Invalid Date range');
+                check &&=false
+            }
+
+            $("#submitbtn").prop("disabled", !check);
+        }
+
+        $(document).ready(function(){
+            $( "#date_range" ).daterangepicker(
+                {
+                    autoUpdateInput: false,
+                    locale: {
+                        cancelLabel: 'Clear'
+                    }
+                });
+
+            $("input:not([type=hidden])").on('change',validateForm);
+
+            $('#date_range').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
+                const start_unix = picker.startDate.unix();
+                $('input[name=from_unix]').val(start_unix);
+                const end_unix = picker.endDate.unix();
+                $('input[name=until_unix]').val(end_unix);
+                validateForm();
+            });
+
+            $('#date_range').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
+            });
+
+            $("#searchform").on('submit',function (e){
+                e.preventDefault();
+                $.ajax({
+                    url:$(this).attr('action'),
+                    method:$(this).attr('method'),
+                    beforeSend: function(){
+                        $("#searchform fieldset").prop( "disabled", true );
+                    },
+                    // This also sends the date rande as string that we can ommit its value
+                    data: $(this).serialize(),
+                    success:function (data){
+                        console.log(data);
+                        $("#searchform fieldset").prop( "disabled", false);
+                    }
+                })
+            });
+        });
+    </script>
+{% endblock %}
+
