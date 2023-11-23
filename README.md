@@ -1,133 +1,50 @@
-# PHP Dev boilerplate
-A Basic php boilerplate code that allows you to rapidly setup and develop php applications.
+# Stock Monitor
 
-> NOTE:
-> 
-> THE boilerplate is desighned and tested to run upon *docker engine* directly in *GNU/linux* hosts and not using docker desktop.
 
-# How to use
+## How to run
 
-## Step 1
-
-Copy the `.env.dist` into `.env`
-
-## Step 2 Populate the `.env` as comments describe.
-
-### PHP APPLICATION VOLUME
-The `PHP_APP_PATH` contains the folder in your *host* (path outside any container) that will mounted as volume in your containers.
-
-### Network IP
-The `IP_BASE` is the first 4 digits of an IPV4 IP. It can be changed in order to setup multiple dev environmnets or upon IP conflict.
-For example if `IP_BASE` is `172.168.3` the used IPS are:
-
-* Nginx `172.168.3.2`
-* Mariadb `172.168.3.3`
-
-Fpm used an intenral network whereas also nginx and mariadb also use it.
-More info on networking section
-
-## Step 3 Run
-
-Execute:
-
+### Step 1: Launch Docker
 ```
+# Generate SSL certificates This is NOT the Symfony's bin folder
+bash bin/certgen.sh
 docker-compose up -d
 ```
 
-# Shut it down
+### Step2 Config DB
 
-## Terminate running containers
-
-Run:
+For local development Set at .env.local (credentials are for local only development):
 
 ```
-docker-compose down -v
+DATABASE_URL="mysql://php_app_usr:php_app_pwd@mariadb:3306/php_app?serverVersion=10.4.31-MariaDB-1&charset=utf8mb4"
 ```
 
-# VOLUMES
-
-## PHP & Nginx
-
-The volume `php_app` is mapped upon the folder via bind mount  at the path defined in `${PHP_APP_PATH}`.
-
-Also there is a volume mounted upon `logs/xdebug` where the xdebug log ist stored upon.
-
-## Mariadb
-
-The folder `./volumes/db` is mapped into `/var/lib/mysql` via bind mount therefore upon `docker-compose down -v` will NOT be deleted.
-
-# Networks
-
-There are 2 networks:
-
-* `private` Intended to run as internal network for containers that need no public access.
-* `public` Intended to run as internal network for containers that need no public access.
-
-The follwing IP are allocated by default:
-
-IP | SERVICE
---- | ---
-nginx | X.X.X.2
-mariadb | X.X.X.3
-
-Where **X.X.X.X** is defined upon `IP_BASE` environmental variable.
-
-# Xdebug
-
-The xdebug settings are set via the following variables at file `env/php.env`:
-
-Variable | Description | Available values
---- | --- | ---
-XDEBUG_IDE_KEY | IDE key where used to define the IDE
-XDEBUG_PORT | Port where xdebug will be connected in to
-XDEBUG_ENABLE | Whether xdebug will be enabled or not | `TRUE` or `FALSE`
-XDEBUG_DBGP | Whether DBGP protocol will be used | `TRUE` or `FALSE`
-XDEBUG_ENABLE | Whether Xdebug is enabled or not | `TRUE` or `FALSE`
-XDEBUG_HOST | Host where Xdebug listens to. If no value provided then it is auto-detected |
-
-
-
-The IP where IDE listen to is automatically detected. In order to test the connectivity upon php container use the following command once you got shell access into the php running container:
-
-```
-test_xdebug
-```
-
-In order to get access upon the php running container run:
+Then run migrations:
 
 ```
 docker exec -ti -u www-data php_app /bin/bash
+php bin/console doctrine:migrations:execute
+php bin/console data:populate:symbols
 ```
 
-> NOTE: 
->
-> In case that an already existing container has the name `php_app` change the value `container_name` at `php_app` service.
+## Step 3 APP URL
 
-# PHP And composer version
+Visit https://172.161.0.2/ at the browser
 
-At docker-compose.yml at the service `php_app` you can define composer and php version app via the following args:
+## App Location
 
-* `PHP_VERSION` for the php version
-* `COMPOSER_VERSION` for the composer version. This is the tags defined at composer docker [image](https://hub.docker.com/_/composer/tags) 
+The app is located upon `./app` folder.
 
-If each argument is changed run the containers as:
+## Email configuration
+
+A mailhog is shipped in the docker-compose.yaml. At .env set
 
 ```
-docker-compose up -d --build
+MAILER_DSN=smtp://mailhog:1025?verify_peer=false
+```
+The `mailhog` is the service name and used as in-docker domain. In order for the mails the following command must run as well:
+
+```
+php bin/console messenger:consume
 ```
 
-# SSL Certificates
-
-There is a script named `./bin/certgen.sh` that is used to generate the nessesary certificates. is creates the following certificates:
-
-* CA root ones at ./ssl/ca folder:
-  * ca.crt << Certificate
-  * ca.key << Certificate key
-
-* Ones used by nginx at ./ssl/certs folder:
-  * www.crt << Certificate
-  * www.key << Certificate key
-
-Import the CA ones to your browser.
-
-The configuration for the domains that certs are used are in the file `ssl/conf/v3.sign` read comments in it in order how to configure it.
+Then at https://172.161.0.6:8085 you'll see the sent emails. The emails are not sent actually mailhog emulates the transport.
