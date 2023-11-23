@@ -5,6 +5,7 @@
 {% block stylesheets %}
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" type="text/css">
     <style>
         aside {
             position: absolute;
@@ -12,6 +13,14 @@
             width:20%;
             top: 0px;
             bottom: 0px;
+        }
+        main {
+            position: absolute;
+            float:right;
+            top: 0px;
+            bottom: 0px;
+            right: 0px;
+            width: 80%;
         }
     </style>
 {% endblock %}
@@ -46,8 +55,25 @@
    </form>
 </aside>
 
-<main style="float: right" class="col">
-
+<main>
+    <div class="container">
+        <canvas id="openclose"></canvas>
+    </div>
+    <div class="container" >
+        <table id="stock_data" class="table">
+            <thead>
+                <tr>
+                    <th data-type="date" data-format="DD/MM/YYYY">Date</th>
+                    <th>OPEN</th>
+                    <th>High</th>
+                    <th>Low</th>
+                    <th>Close</th>
+                    <th>Volume</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 </main>
 {% endblock %}
 
@@ -58,8 +84,9 @@
             crossorigin="anonymous"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" type="text/javascript"></script>
 
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
 
         function inputError(element,error_msg){
@@ -106,6 +133,47 @@
             $("#submitbtn").prop("disabled", !check);
         }
 
+        function refreshDataTable(datatableInstance,table_data){
+            datatableInstance.destroy();
+            datatableInstance.init({
+                searchable: false,
+                pagination:false
+            });
+            datatableInstance.insert(table_data);
+            datatableInstance.refresh();
+        }
+
+        function refreshChart(chart,labels,open_prices,close_prices){
+            if(chart) {
+                chart.destroy();
+            }
+            return new Chart(
+                document.getElementById("openclose"),
+                {
+                    type:'line',
+                    data: {
+                        labels:labels,
+                        datasets:[
+                            {
+                                label: 'Open Prices',
+                                data: open_prices,
+                                fill: false,
+                                borderColor: 'rgb(75, 192, 192)',
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Close Prices',
+                                data: close_prices,
+                                fill: false,
+                                borderColor: 'rgb(192, 192, 75)',
+                                tension: 0.1
+                            },
+                        ]
+                    }
+                });
+
+        }
+
         $(document).ready(function(){
             $( "#date_range" ).daterangepicker(
                 {
@@ -130,21 +198,63 @@
                 $(this).val('');
             });
 
+            const dataTable = new simpleDatatables.DataTable("#stock_data", {
+                searchable: false,
+                fixedHeight: true,
+                pagination:false
+            });
+
+            var openClose = null;
+
             $("#searchform").on('submit',function (e){
                 e.preventDefault();
                 $.ajax({
-                    url:$(this).attr('action'),
-                    method:$(this).attr('method'),
-                    beforeSend: function(){
-                        $("#searchform fieldset").prop( "disabled", true );
+                    url: $(this).attr('action'),
+                    method: $(this).attr('method'),
+                    beforeSend: function () {
+                        $("#searchform fieldset").prop("disabled", true);
                     },
                     // This also sends the date rande as string that we can ommit its value
                     data: $(this).serialize(),
-                    success:function (data){
+                    success: function (data) {
                         console.log(data);
-                        $("#searchform fieldset").prop( "disabled", false);
+
+                        const table_data = [];
+
+                        const graph_labels = [];
+                        const open_prices = [];
+                        const close_prices = [];
+
+                        data.price
+                            .sort((a, b) => parseInt(a.date) - parseInt(b.date))
+                            .forEach((item) => {
+                                const date = moment.unix(item.date).format("DD/MM/YYYY")
+                                table_data.push(
+                                    {
+                                        "Date": moment.unix(item.date).format("DD/MM/YYYY"),
+                                        "OPEN": item.open,
+                                        "High": item.high,
+                                        "Low": item.low,
+                                        "Close": item.close,
+                                        "Volume": item.volume
+                                    }
+                                );
+
+                                graph_labels.push(date);
+                                open_prices.push(item.open);
+                                close_prices.push(item.close);
+                            });
+
+                        refreshDataTable(dataTable, table_data);
+                        openClose = refreshChart(openClose, graph_labels, open_prices, close_prices);
+
+                        $("#searchform fieldset").prop("disabled", false);
+                    }, error: function (jqXHR, textStatus, errorThrown) {
+                        $("#searchform fieldset").prop("disabled", false);
+                        const response = JSON.parse(jqXHR.responseText);
+                        alert(response.err);
                     }
-                })
+                });
             });
         });
     </script>
