@@ -186,7 +186,7 @@
             $("input:not([type=hidden])").on('change',validateForm);
 
             $('#date_range').on('apply.daterangepicker', function(ev, picker) {
-                $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
+                $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
                 const start_unix = picker.startDate.unix();
                 $('input[name=from_unix]').val(start_unix);
                 const end_unix = picker.endDate.unix();
