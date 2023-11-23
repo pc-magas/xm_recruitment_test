@@ -2,6 +2,7 @@
 
 namespace App\Tests\Services;
 
+use App\Entity\CompanySymbol;
 use App\Exceptions\InvalidDateRangeException;
 use App\Exceptions\InvalidSymbolException;
 use App\Repository\CompanySymbolRepository;
@@ -60,8 +61,11 @@ class SearchStockServiceTest extends TestCase
             ->onlyMethods(['findOneBy'])
             ->getMock();
 
-        // We need to know for non-empty values
-        $symbolRepositoryMock->method('findOneBy')->willReturn(['symbol'=>'GOOG']);
+        $returnedEntity = new CompanySymbol();
+        $returnedEntity->setSymbol("GOOG");
+        $returnedEntity->setName("GOOGLE");
+
+        $symbolRepositoryMock->method('findOneBy')->willReturn($returnedEntity);
 
         $historicalDataApiMock = $this->createMock(HistoricalDataApi::class);
         $historicalDataApiMock->method('fetch')->willReturn(
@@ -80,9 +84,11 @@ class SearchStockServiceTest extends TestCase
         $service = new SearchStockService($historicalDataApiMock,$symbolRepositoryMock);
 
         $result = $service->fetchData('GOOG',$date_min_param,$date_max_param);
-        $this->assertNotEmpty($result);
+        $this->assertNotEmpty($result->getSymbol());
+        $prices = $result->getPrices();
+        $this->assertNotEmpty($prices);
 
-        foreach ($result as $item){
+        foreach ($prices as $item){
             $this->assertLessThanOrEqual($date_max,(int)$item['date']);
             $this->assertGreaterThanOrEqual($date_min,(int)$item['date']);
         }
@@ -95,8 +101,12 @@ class SearchStockServiceTest extends TestCase
             ->onlyMethods(['findOneBy'])
             ->getMock();
 
+        $returnedEntity = new CompanySymbol();
+        $returnedEntity->setSymbol("GOOG");
+        $returnedEntity->setName("GOOGLE");
+
         // We need to know for non-empty values
-        $symbolRepositoryMock->method('findOneBy')->willReturn(['symbol'=>'GOOG']);
+        $symbolRepositoryMock->method('findOneBy')->willReturn($returnedEntity);
 
         $historicalDataApiMock = $this->createMock(HistoricalDataApi::class);
         $historicalDataApiMock->method('fetch')->willReturn(
@@ -123,8 +133,8 @@ class SearchStockServiceTest extends TestCase
         $service = new SearchStockService($historicalDataApiMock,$symbolRepositoryMock);
 
         $result = $service->fetchData('GOOG',$date_min_param,$date_max_param);
-
-        $this->assertEmpty($result);
+        $this->assertNotEmpty($result->getSymbol());
+        $this->assertEmpty($result->getPrices());
     }
 
     public function testMissingSymbol()

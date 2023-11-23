@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\DataSerialization\SearchResult;
+use App\DataSerialization\SymbolSearchResult;
 use App\Exceptions\InvalidDateRangeException;
 use App\Exceptions\InvalidSymbolException;
 use App\Repository\CompanySymbolRepository;
@@ -24,7 +26,7 @@ class SearchStockService
      * @param string $symbol Company Symbol
      * @param \Datetime $from From Datetime
      * @param \Datetime $until Until Datetime
-     * @return array With the stock thata that are in the criteria
+     * @return SearchResult With the stock thata that are in the criteria
      *
      * @throws \RuntimeException
      * @throws InvalidDateRangeException
@@ -33,7 +35,7 @@ class SearchStockService
     public function fetchData(string $symbol,
                               \Datetime $from,
                               \Datetime $until
-    ):array
+    ):SearchResult
     {
         // we need to search for a whole day
         $from->setTime(0,0,0,0);
@@ -48,7 +50,8 @@ class SearchStockService
             throw new InvalidSymbolException();
         }
 
-        if(empty($this->symbolRepository->findOneBy(['symbol'=>$symbol]))){
+        $companyInfo = $this->symbolRepository->findOneBy(['symbol'=>$symbol]);
+        if(empty($companyInfo)){
             throw new \RuntimeException("Symbol is not found");
         }
 
@@ -70,7 +73,7 @@ class SearchStockService
             }
         }
 
-        return $endresult;
+        return new SearchResult($companyInfo,$endresult);
     }
 
 }
